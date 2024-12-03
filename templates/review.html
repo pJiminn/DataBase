@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reviews for {{ movie['title'] }}</title>
+</head>
+
+<body>
+    <h1>Reviews for {{ movie['title'] }}</h1>
+    <form method="POST">
+        <textarea name="review" placeholder="Write a review..." required></textarea>
+        <button type="submit">Add Review</button>
+    </form>
+    <ul>
+        {% for review in reviews %}
+        <li>{{ review['review_text'] }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/movies">Back to Movies</a>
+</body>
+
+</html>

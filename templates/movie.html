@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Movie List</title>
+</head>
+
+<body>
+    <h1>Movie List</h1>
+    <form method="POST" action="/movies">
+        <input type="text" name="title" placeholder="Movie Title" required>
+        <input type="text" name="genre" placeholder="Genre">
+        <input type="text" name="director" placeholder="Director">
+        <input type="text" name="actors" placeholder="Actors">
+        <button type="submit">Add Movie</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Genre</th>
+                <th>Director</th>
+                <th>Actors</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movie in movies %}
+            <tr>
+                <td>{{ movie['title'] }}</td>
+                <td>{{ movie['genre'] }}</td>
+                <td>{{ movie['director'] }}</td>
+                <td>{{ movie['actors'] }}</td>
+                <td><a href="/reviews/{{ movie['id'] }}">View Reviews</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
