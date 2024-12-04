@@ -4,12 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <title>MY PROFILE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-    <h1>MY PROFILE</h1>
-    <p>여기에 사용자 프로필 정보나 설정을 표시</p>
-    <a href="/">홈으로 돌아가기</a>
+    <header>
+        <h1>{{ user_name }}님의 <span class="highlight">PROFILE</span></h1>
+    </header>
+    <main>
+        <section>
+            <h2>🌸 프로필 정보 🌸</h2>
+            <p>리뷰 작성 개수: <strong>{{ total_reviews }}</strong></p>
+            <p>첫 리뷰 작성일: <strong>{{ first_review_date }}</strong></p>
+        </section>
+        <section>
+            <h2>💖 작성한 리뷰 💖</h2>
+            <ul>
+                {% for review in reviews %}
+                <li>
+                    <p><strong>{{ review['movie_title'] }}</strong>:</p>
+                    <blockquote>{{ review['review_text'] }}</blockquote>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if reviews|length == 0 %}
+            <p>작성한 리뷰가 없습니다. 😢</p>
+            {% endif %}
+        </section>
+    </main>
+    <footer>
+        <a href="/">홈으로 돌아가기</a>
+    </footer>
 </body>
 
 </html>
