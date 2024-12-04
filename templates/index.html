@@ -1,19 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Info</title>
+    <title>나만의 Cinema</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-    <h1>What's your MOVIE</h1>
-    <nav>
-        <a href="/movies">Search Movies</a> |
-        <a href="/reviews">My Reviews</a>
-    </nav>
+    <header>
+        <h1>나만의 <span class="highlight">CINEMA</span></h1>
+    </header>
+    <main>
+        <section class="weekly-pick">
+            <h2>😃 이번주 PICK!</h2>
+            <img src="{{ url_for('static', filename='images/pick.jpg') }}" alt="이번주 PICK 이미지">
+        </section>
+        <nav class="menu">
+            <a href="/movies">
+                <div class="menu-item">OUR MOVIES</div>
+            </a>
+            <a href="/profile">
+                <div class="menu-item">MY PROFILES</div>
+            </a>
+            <a href="/review">
+                <div class="menu-item">REVIEW</div>
+            </a>
+            <a href="/about">
+                <div class="menu-item">What's our app?</div>
+            </a>
+        </nav>
+        <section class="review-top3">
+            <h2>😃 리뷰 평점 TOP3</h2>
+            <div class="top-movies">
+                <img src="{{ url_for('static', filename='images/top1.jpg') }}" alt="TOP1">
+                <img src="{{ url_for('static', filename='images/top2.jpg') }}" alt="TOP2">
+                <img src="{{ url_for('static', filename='images/top3.jpg') }}" alt="TOP3">
+            </div>
+        </section>
+    </main>
 </body>
 
 </html>
