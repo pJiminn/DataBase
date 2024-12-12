@@ -13,6 +13,22 @@
             font-family: Arial, sans-serif;
         }
 
+        .home-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            text-decoration: none;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .home-button:hover {
+            background-color: #0056b3;
+        }
+
         h1 {
             text-align: center;
             margin-bottom: 20px;
@@ -81,6 +97,9 @@
 </head>
 
 <body>
+    <!-- Home 버튼 -->
+    <a href="/" class="home-button">Home</a>
+    
     <h1>Movie Search</h1>
     <form method="POST" action="/movies">
         <input type="text" name="search_query" placeholder="검색어를 입력하세요" value="{{ query }}" required>
@@ -97,14 +116,14 @@
     <table>
         <thead>
             <tr>
-                <th>추가</th>
-                <th>제목</th>
-                <th>포스터</th>
-                <th>감독</th>
-                <th>배우</th>
-                <th>개봉일</th>
-                <th>장르</th>
-                <th>런타임</th>
+                <th style="font-size: 20px;">추가</th>
+                <th style="font-size: 20px;">제목</th>
+                <th style="font-size: 20px;">포스터</th>
+                <th style="font-size: 20px;">감독</th>
+                <th style="font-size: 20px; width: 300px;">배우</th>
+                <th style="font-size: 20px;">개봉일</th>
+                <th style="font-size: 20px;">장르</th>
+                <th style="font-size: 20px; width: 100px;">런타임</th>
             </tr>
         </thead>
         <tbody>
@@ -119,7 +138,7 @@
                         <input type="hidden" name="release_date" value="{{ movie.release_date }}">
                         <input type="hidden" name="genre" value="{{ movie.genre }}">
                         <input type="hidden" name="runtime" value="{{ movie.runtime }}">
-                        <button type="submit">추가</button>
+                        <button type="submit" style="width: 60px; font-size: 15px;">추가</button>
                     </form>
                 </td>
                 <td>{{ movie.title }}</td>
