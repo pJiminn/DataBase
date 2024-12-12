@@ -79,12 +79,21 @@ def search_movies(search_query, search_type):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    conn = get_db_connection()
+    latest_movie = conn.execute('SELECT poster FROM Movie ORDER BY movieID DESC LIMIT 1').fetchone()
+    conn.close()
+
+    # 최신 포스터 URL이 없으면 기본 이미지 사용
+    poster_url = latest_movie['poster'] if latest_movie and latest_movie['poster'] else url_for('static', filename='images/pick.jpg')
+
+    return render_template('index.html', weekly_pick=poster_url)
+
 
 # 영화 목록 페이지
 @app.route('/movies', methods=['GET', 'POST'])
 def movies():
     search_results = []
+    mode=''
     query = ''
     search_type = 'title'
     page = int(request.args.get('page', 1))  # 현재 페이지, 기본값 1
@@ -94,6 +103,7 @@ def movies():
         query = request.form['search_query']
         search_type = request.form['search_type']
         search_results = search_movies(query, search_type)
+        mode='add'
     elif 'query' in request.args:
         query = request.args.get('query')
         search_type = request.args.get('search_type')
@@ -112,9 +122,24 @@ def movies():
         query=query,
         search_type=search_type,
         page=page,
-        total_pages=total_pages
+        total_pages=total_pages,
+        mode=mode
     )
 
+@app.route('/movies/add', methods=['GET', 'POST'])
+def add_movie_page():
+    if request.method == 'POST':
+        query = request.form['search_query']
+        search_type = request.form['search_type']
+        search_results = search_movies(query, search_type)
+        return render_template(
+            'movies.html',
+            movies=search_results,
+            query=query,
+            search_type=search_type,
+            mode='add'
+        )
+    return render_template('movies.html', mode='add')
 
 @app.route('/add_movieToDatabase', methods=['POST'])
 def add_movie():
@@ -157,6 +182,47 @@ def add_movie():
         conn.close()
 
     return redirect(url_for('movies'))
+
+@app.route('/movies/list')
+def list_movies_page():
+    conn = get_db_connection()
+
+    # 영화 목록과 관련 감독 및 배우 정보 가져오기
+    movies = conn.execute('''
+        SELECT 
+            m.movieID, 
+            m.title, 
+            m.genre, 
+            m.release_date, 
+            m.runtime, 
+            m.poster,
+            GROUP_CONCAT(DISTINCT md.directorName) AS directors,
+            GROUP_CONCAT(DISTINCT ma.actorName) AS actors
+        FROM Movie m
+        LEFT JOIN Movie_Director md ON m.movieID = md.movieID
+        LEFT JOIN Movie_Actor ma ON m.movieID = ma.movieID
+        GROUP BY m.movieID
+    ''').fetchall()
+    conn.close()
+
+    # 데이터 전달
+    return render_template('movies.html', movies=movies, mode='list')
+
+@app.route('/delete_movie/<int:movie_id>', methods=['POST'])
+def delete_movie(movie_id):
+    """
+    Delete a movie from the database by movieID.
+    """
+    conn = get_db_connection()
+    try:
+        conn.execute('DELETE FROM Movie WHERE movieID = ?', (movie_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Error deleting movie: {e}")
+    finally:
+        conn.close()
+
+    return redirect(url_for('list_movies_page'))
 
 
 # 리뷰 페이지
