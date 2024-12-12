@@ -59,17 +59,19 @@ def search_movies(search_query, search_type):
                 title = remove_tags(movie.get("title", "정보 없음"))
                 directors = movie.get("directors", {}).get("director", [])
                 directors = [remove_tags(director['directorNm']) for director in directors][:3]
-                actors = movie.get("actors", {}).get("actor", [])[:5]
-                actors = [remove_tags(actor['actorNm']) for actor in actors]
+                actors = movie.get("actors", {}).get("actor", [])
+                main_actors = [remove_tags(actor['actorNm']) for actor in actors][:5]
                 release_date = movie.get("repRlsDate", "정보 없음")
                 genre = movie.get("genre", "정보 없음")
+                runtime = movie.get("runtime", "정보 없음")
                 poster = get_first_poster_url(movie.get("posters", "정보 없음"))
                 result.append({
                     "title": title,
                     "directors": ", ".join(directors),
-                    "actors": ", ".join(actors),
+                    "actors": ", ".join(main_actors),
                     "release_date": release_date,
                     "genre": genre,
+                    "runtime": runtime,
                     "poster": poster
                 })
             return result
@@ -112,6 +114,49 @@ def movies():
         page=page,
         total_pages=total_pages
     )
+
+
+@app.route('/add_movieToDatabase', methods=['POST'])
+def add_movie():
+    title = request.form['title']
+    poster = request.form['poster']
+    directors = request.form['directors']
+    actors = request.form['actors']
+    release_date = request.form['release_date']
+    genre = request.form['genre']
+    runtime = request.form['runtime']
+
+    conn = get_db_connection()
+    try:
+        # Movie 데이터 삽입
+        conn.execute(
+            'INSERT INTO Movie (title, genre, release_date, runtime, poster) VALUES (?, ?, ?, ?, ?)',
+            (title, genre, release_date, runtime, poster)
+        )
+        movie_id = conn.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+        # Movie_Director 데이터 삽입
+        for director in directors.split(', '):
+            conn.execute(
+                'INSERT INTO Movie_Director (directorName, movieID) VALUES (?, ?)',
+                (director, movie_id)
+            )
+
+        # Movie_Actor 데이터 삽입
+        for actor in actors.split(', '):
+            conn.execute(
+                'INSERT INTO Movie_Actor (actorName, movieID) VALUES (?, ?)',
+                (actor, movie_id)
+            )
+
+        conn.commit()
+    except Exception as e:
+        print(f"Error adding movie: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+
+    return redirect(url_for('movies'))
 
 
 # 리뷰 페이지
