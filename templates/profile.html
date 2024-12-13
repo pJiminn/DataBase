@@ -14,27 +14,26 @@
     <main>
         <section>
             <h2>🌸 프로필 정보 🌸</h2>
-            <p>리뷰 작성 개수: <strong>{{ total_reviews }}</strong></p>
-            <p>첫 리뷰 작성일: <strong>{{ first_review_date }}</strong></p>
+            <p>리뷰 작성 개수: {{ reviews|length }}</p>
+
         </section>
         <section>
             <h2>💖 작성한 리뷰 💖</h2>
+            {% if reviews %}
             <ul>
                 {% for review in reviews %}
                 <li>
-                    <p><strong>{{ review['movie_title'] }}</strong>:</p>
-                    <blockquote>{{ review['review_text'] }}</blockquote>
+                    <strong>Movie ID:</strong> {{ review['movieID'] }}<br>
+                    <strong>Comment:</strong> {{ review['comment'] }}<br>
+                    <strong>Review Date:</strong> {{ review['reviewDate'] }}<br>
+                    <strong>Watched Date:</strong> {{ review['watchedDate'] }}
                 </li>
                 {% endfor %}
             </ul>
-            {% if reviews|length == 0 %}
+            {% else %}
             <p>작성한 리뷰가 없습니다. 😢</p>
             {% endif %}
-        </section>
-    </main>
-    <footer>
-        <a href="/">홈으로 돌아가기</a>
-    </footer>
+            <a href="{{ url_for('index') }}">Go Back to Home</a>
 </body>
 
 </html>

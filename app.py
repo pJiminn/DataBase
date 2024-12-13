@@ -9,12 +9,16 @@ import re
 app = Flask(__name__)
 
 # 데이터베이스 연결 함수
+
+
 def get_db_connection():
     conn = sqlite3.connect('database/movies.db')
     conn.row_factory = sqlite3.Row
     return conn
 
 # 태그 제거 및 모든 공백 제거 함수
+
+
 def remove_tags(text):
     if text:
         # 1. !HS, !HE 태그 제거
@@ -26,6 +30,8 @@ def remove_tags(text):
     return ''
 
 # 포스터 URL 처리 함수
+
+
 def get_first_poster_url(poster_urls):
     if poster_urls:
         # 파이프(|)로 분리하고 첫 번째 URL 반환
@@ -33,6 +39,8 @@ def get_first_poster_url(poster_urls):
     return None
 
 # 영화 검색 함수
+
+
 def search_movies(search_query, search_type):
     url = f"http://api.koreafilm.or.kr/openapi-data2/wisenut/search_api/search_json2.jsp"
     params = {
@@ -58,9 +66,11 @@ def search_movies(search_query, search_type):
             for movie in movies:
                 title = remove_tags(movie.get("title", "정보 없음"))
                 directors = movie.get("directors", {}).get("director", [])
-                directors = [remove_tags(director['directorNm']) for director in directors][:3]
+                directors = [remove_tags(director['directorNm'])
+                             for director in directors][:3]
                 actors = movie.get("actors", {}).get("actor", [])
-                main_actors = [remove_tags(actor['actorNm']) for actor in actors][:5]
+                main_actors = [remove_tags(actor['actorNm'])
+                               for actor in actors][:5]
                 release_date = movie.get("repRlsDate", "정보 없음")
                 genre = movie.get("genre", "정보 없음")
                 runtime = movie.get("runtime", "정보 없음")
@@ -77,14 +87,17 @@ def search_movies(search_query, search_type):
             return result
     return []
 
+
 @app.route('/')
 def index():
     conn = get_db_connection()
-    latest_movie = conn.execute('SELECT poster FROM Movie ORDER BY movieID DESC LIMIT 1').fetchone()
+    latest_movie = conn.execute(
+        'SELECT poster FROM Movie ORDER BY movieID DESC LIMIT 1').fetchone()
     conn.close()
 
     # 최신 포스터 URL이 없으면 기본 이미지 사용
-    poster_url = latest_movie['poster'] if latest_movie and latest_movie['poster'] else url_for('static', filename='images/pick.jpg')
+    poster_url = latest_movie['poster'] if latest_movie and latest_movie['poster'] else url_for(
+        'static', filename='images/pick.jpg')
 
     return render_template('index.html', weekly_pick=poster_url)
 
@@ -93,7 +106,7 @@ def index():
 @app.route('/movies', methods=['GET', 'POST'])
 def movies():
     search_results = []
-    mode=''
+    mode = ''
     query = ''
     search_type = 'title'
     page = int(request.args.get('page', 1))  # 현재 페이지, 기본값 1
@@ -103,7 +116,7 @@ def movies():
         query = request.form['search_query']
         search_type = request.form['search_type']
         search_results = search_movies(query, search_type)
-        mode='add'
+        mode = 'add'
     elif 'query' in request.args:
         query = request.args.get('query')
         search_type = request.args.get('search_type')
@@ -126,6 +139,7 @@ def movies():
         mode=mode
     )
 
+
 @app.route('/movies/add', methods=['GET', 'POST'])
 def add_movie_page():
     if request.method == 'POST':
@@ -140,6 +154,7 @@ def add_movie_page():
             mode='add'
         )
     return render_template('movies.html', mode='add')
+
 
 @app.route('/add_movieToDatabase', methods=['POST'])
 def add_movie():
@@ -183,6 +198,7 @@ def add_movie():
 
     return redirect(url_for('movies'))
 
+
 @app.route('/movies/list')
 def list_movies_page():
     conn = get_db_connection()
@@ -208,6 +224,7 @@ def list_movies_page():
     # 데이터 전달
     return render_template('movies.html', movies=movies, mode='list')
 
+
 @app.route('/delete_movie/<int:movie_id>', methods=['POST'])
 def delete_movie(movie_id):
     """
@@ -228,17 +245,63 @@ def delete_movie(movie_id):
 # 리뷰 페이지
 @app.route('/review')
 def review():
-    return render_template('review.html') 
+    return render_template('review.html')
 
 # 내 리뷰, 정보 볼 수 있는?
+
+
 @app.route('/profile')
 def profile():
     return render_template('profile.html')  # MY PROFILE 페이지
 
-# 그냥 만들어 봤어 4칸이 예뻐보여서 쩝쩝 하하
+
+@app.route('/profile/input', methods=['GET'])
+def profile_input():
+    return render_template('profile_input.html')  # 이름 입력 페이지
+
+
+@app.route('/profile/check', methods=['POST'])
+def check_user():
+    username = request.form['username']  # 입력받은 사용자 이름
+    conn = get_db_connection()
+
+    # User 테이블에서 이름 확인
+    user = conn.execute(
+        'SELECT UserID FROM User WHERE UserID = ?',
+        (username,)
+    ).fetchone()
+
+    if not user:  # 사용자 이름이 없으면 새로 추가
+        conn.execute(
+            'INSERT INTO User (UserID) VALUES (?)',
+            (username,)
+        )
+        conn.commit()
+        user_id = conn.execute('SELECT last_insert_rowid()').fetchone()[
+            0]  # 새 UserID 가져오기
+    else:
+        user_id = user['UserID']
+
+    # 해당 UserID의 리뷰 가져오기
+    reviews = conn.execute(
+        '''
+        SELECT r.reviewID, r.movieID, r.comment, r.reviewDate, r.watchedDate
+        FROM Review r
+        WHERE r.UserID = ?
+        ''',
+        (user_id,)
+    ).fetchall()
+
+    conn.close()
+
+    # 프로필 페이지로 리뷰 정보 전달
+    return render_template('profile.html', user_name=username, reviews=reviews)
+
+
 @app.route('/about')
 def about():
     return render_template('about.html')  # What's our app? 페이지
+
 
 @app.route('/reviews/<int:movie_id>', methods=['GET', 'POST'])
 def reviews(movie_id):

@@ -1,26 +1,18 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>MY PROFILE</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Profile Input</title>
 </head>
 
 <body>
-    <header>
-        <h1>MY <span class="highlight">PROFILE</span></h1>
-    </header>
-    <main>
-        <form method="POST" action="/profile" class="name-form">
-            <h2>사용자 이름을 입력하세요</h2>
-            <input type="text" name="name" placeholder="이름 입력" required>
-            <button type="submit">프로필 확인</button>
-        </form>
-    </main>
-    <footer>
-        <a href="/">홈으로 돌아가기</a>
-    </footer>
+    <h1>Enter Your Name</h1>
+    <form action="{{ url_for('check_user') }}" method="post">
+        <label for="username">Your Name:</label>
+        <input type="text" id="username" name="username" required>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 
 </html>
