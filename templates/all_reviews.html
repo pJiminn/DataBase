@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>모든 리뷰 보기</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <header style="margin-bottom: 30px;">
+        <h1>리뷰 모아보기 💬</h1>
+
+    </header>
+
+    <form method="get" action="{{ url_for('all_reviews') }}">
+        <label for="movie">영화 이름:</label>
+        <input type="text" id="movie" name="movie" value="{{ search_movie }}">
+
+        <label for="user">유저 이름:</label>
+        <input type="text" id="user" name="user" value="{{ search_user }}">
+
+        <label for="sort">정렬 기준:</label>
+        <select id="sort" name="sort">
+            <option value="date" {% if sort_by=='date' %}selected{% endif %}>날짜별</option>
+            <option value="movie" {% if sort_by=='movie' %}selected{% endif %}>영화 이름별</option>
+            <option value="user" {% if sort_by=='user' %}selected{% endif %}>유저 이름별</option>
+        </select>
+
+        <button type="submit">검색</button>
+    </form>
+
+    <main>
+        {% if reviews %}
+        <table class="review-table">
+            <thead>
+                <tr>
+                    <th>Movie Title</th>
+                    <th>Comment</th>
+                    <th>Review Date</th>
+                    <th>Watched Date</th>
+                    <th>User</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for review in reviews %}
+                <tr>
+                    <td>{{ review['movie_title'] }}</td>
+                    <td>{{ review['comment'] }}</td>
+                    <td>{{ review['reviewDate'] }}</td>
+                    <td>{{ review['watchedDate'] }}</td>
+                    <td>{{ review['user_name'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination">
+            {% if page > 1 %}
+            <a
+                href="{{ url_for('all_reviews', page=page-1, movie=search_movie, user=search_user, sort=sort_by) }}">Previous</a>
+            {% endif %}
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %} <a
+                href="{{ url_for('all_reviews', page=page+1, movie=search_movie, user=search_user, sort=sort_by) }}">
+                Next</a>
+                {% endif %}
+        </div>
+
+        {% else %}
+        <p>리뷰가 없습니다. 😢</p>
+        {% endif %}
+    </main>
+</body>
+
+</html>

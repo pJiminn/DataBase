@@ -14,26 +14,60 @@
     <main>
         <section>
             <h2>🌸 프로필 정보 🌸</h2>
+            <p>유저 이름 : {{ user_name }}</p>
             <p>리뷰 작성 개수: {{ reviews|length }}</p>
-
         </section>
         <section>
-            <h2>💖 작성한 리뷰 💖</h2>
-            {% if reviews %}
-            <ul>
-                {% for review in reviews %}
-                <li>
-                    <strong>Movie ID:</strong> {{ review['movieID'] }}<br>
-                    <strong>Comment:</strong> {{ review['comment'] }}<br>
-                    <strong>Review Date:</strong> {{ review['reviewDate'] }}<br>
-                    <strong>Watched Date:</strong> {{ review['watchedDate'] }}
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>작성한 리뷰가 없습니다. 😢</p>
-            {% endif %}
-            <a href="{{ url_for('index') }}">Go Back to Home</a>
+            <section>
+                <h2>💖 작성한 리뷰 💖</h2>
+                <!-- 리뷰 추가 버튼 -->
+                <button id="addReviewBtn">✏️ 리뷰 추가 ✏️</button>
+                <section class="review-list">
+                    {% if reviews %}
+                    <table class="review-table">
+                        <thead>
+                            <tr>
+                                <th>Movie Title</th>
+                                <th>Comment</th>
+                                <th>Review Date</th>
+                                <th>Watched Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews %}
+                            <tr>
+                                <td>{{ review['movie_title'] }}</td>
+                                <td>{{ review['comment'] }}</td>
+                                <td>{{ review['reviewDate'] }}</td>
+                                <td>{{ review['watchedDate'] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="no-reviews">작성한 리뷰가 없습니다. 😢</p>
+                    {% endif %}
+                </section>
+
+
+    </main>
+
+    <script>
+        document.getElementById("addReviewBtn").addEventListener("click", function () {
+            const username = "{{ user_name }}";  // 부모 창에서 사용자 이름 가져오기
+            const popup = window.open(
+                `/review/popup?username=${encodeURIComponent(username)}`,
+                "리뷰 추가",
+                "width=500,height=600"
+            );
+            if (popup) {
+                popup.focus();
+            } else {
+                alert("팝업을 열 수 없습니다. 팝업 차단 설정을 확인하세요.");
+            }
+        });
+    </script>
+
 </body>
 
 </html>

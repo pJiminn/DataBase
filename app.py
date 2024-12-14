@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 from config import api_key
 import requests
 import sqlite3
+from datetime import datetime
 import math
 import re
 
@@ -242,14 +243,6 @@ def delete_movie(movie_id):
     return redirect(url_for('list_movies_page'))
 
 
-# 리뷰 페이지
-@app.route('/review')
-def review():
-    return render_template('review.html')
-
-# 내 리뷰, 정보 볼 수 있는?
-
-
 @app.route('/profile')
 def profile():
     return render_template('profile.html')  # MY PROFILE 페이지
@@ -262,7 +255,7 @@ def profile_input():
 
 @app.route('/profile/check', methods=['POST'])
 def check_user():
-    username = request.form['username']  # 입력받은 사용자 이름
+    username = request.form['username']
     conn = get_db_connection()
 
     # User 테이블에서 이름 확인
@@ -271,22 +264,22 @@ def check_user():
         (username,)
     ).fetchone()
 
-    if not user:  # 사용자 이름이 없으면 새로 추가
+    if not user:
         conn.execute(
             'INSERT INTO User (UserID) VALUES (?)',
             (username,)
         )
         conn.commit()
-        user_id = conn.execute('SELECT last_insert_rowid()').fetchone()[
-            0]  # 새 UserID 가져오기
+        user_id = conn.execute('SELECT last_insert_rowid()').fetchone()[0]
     else:
         user_id = user['UserID']
 
     # 해당 UserID의 리뷰 가져오기
     reviews = conn.execute(
         '''
-        SELECT r.reviewID, r.movieID, r.comment, r.reviewDate, r.watchedDate
+        SELECT r.reviewID, m.title AS movie_title, r.comment, r.reviewDate, r.watchedDate
         FROM Review r
+        JOIN Movie m ON r.movieID = m.movieID
         WHERE r.UserID = ?
         ''',
         (user_id,)
@@ -294,33 +287,153 @@ def check_user():
 
     conn.close()
 
-    # 프로필 페이지로 리뷰 정보 전달
     return render_template('profile.html', user_name=username, reviews=reviews)
+
+
+@app.route('/review/popup', methods=['GET'])
+def review_popup():
+    username = request.args.get('username')  # 부모 창에서 전달된 사용자 이름
+    return render_template('review_popup.html', username=username)
+
+
+@app.route('/add_review', methods=['POST'])
+def add_review():
+    movie_title = request.form['movieTitle']  # 영화 제목
+    comment = request.form['comment']  # 리뷰 내용
+    watched_date = request.form['watchedDate']  # 영화 본 날짜
+    review_date = datetime.now().strftime('%Y-%m-%d')  # 현재 날짜
+    username = request.form['username']  # 사용자 이름 (폼에서 전달)
+    print(f"Received username: {username}")
+
+    conn = get_db_connection()
+
+    try:
+        # Movie 테이블에서 movieID 가져오기
+        movie = conn.execute(
+            'SELECT movieID FROM Movie WHERE title = ?',
+            (movie_title,)
+        ).fetchone()
+
+        if not movie:
+            raise Exception("해당 영화가 데이터베이스에 없습니다.")
+
+        movie_id = movie['movieID']
+
+        # User 테이블에서 UserID 가져오기
+        user = conn.execute(
+            'SELECT UserID FROM User WHERE UserID = ?',
+            (username,)
+        ).fetchone()
+        print(f"Queried user: {user}")
+        if not user:
+            raise Exception("사용자가 데이터베이스에 없습니다.")
+
+        user_id = user['UserID']
+
+        # 리뷰 테이블에 데이터 삽입
+        conn.execute(
+            '''
+            INSERT INTO Review (movieID, userID, comment, reviewDate, watchedDate)
+            VALUES (?, ?, ?, ?, ?)
+            ''',
+            (movie_id, user_id, comment, review_date, watched_date)
+        )
+
+        # 트랜잭션 커밋
+        conn.commit()
+    except Exception as e:
+        conn.rollback()  # 오류 발생 시 롤백
+        return f'''
+        <script>
+            alert("오류 발생: {str(e)}");
+            window.close();
+        </script>
+        '''
+    finally:
+        conn.close()
+
+    # 성공 메시지 및 팝업 닫기
+    return '''
+    <script>
+        alert("리뷰가 저장되었습니다!");
+        window.opener.location.reload();  // 부모 창 새로고침
+        window.close();  // 팝업 닫기
+    </script>
+    '''
+
+
+@app.route('/review', methods=['GET'])
+def all_reviews():
+    page = int(request.args.get('page', 1))  # 현재 페이지, 기본값 1
+    per_page = 10  # 한 페이지당 리뷰 수
+    offset = (page - 1) * per_page
+
+    # 검색 및 정렬 조건 받기
+    search_movie = request.args.get('movie', '')  # 영화 이름 검색
+    search_user = request.args.get('user', '')  # 유저 검색
+    sort_by = request.args.get('sort', 'date')  # 정렬 기준 (기본값: 날짜)
+
+    conn = get_db_connection()
+
+    # 총 리뷰 개수 가져오기 (필터 포함)
+    count_query = '''
+        SELECT COUNT(*) 
+        FROM Review r
+        JOIN Movie m ON r.movieID = m.movieID
+        JOIN User u ON r.userID = u.UserID
+        WHERE m.title LIKE ? AND u.UserID LIKE ?
+    '''
+    total_reviews = conn.execute(
+        count_query,
+        (f"%{search_movie}%", f"%{search_user}%")
+    ).fetchone()[0]
+    total_pages = (total_reviews + per_page - 1) // per_page  # 전체 페이지 수
+
+    # 정렬 기준에 따라 동적 쿼리 작성
+    if sort_by == 'movie':
+        order_clause = 'ORDER BY m.title ASC, r.reviewDate DESC'
+    elif sort_by == 'user':
+        order_clause = 'ORDER BY u.UserID ASC, r.reviewDate DESC'
+    else:  # 기본값: 날짜별
+        order_clause = 'ORDER BY r.reviewDate DESC'
+
+    # 특정 페이지에 해당하는 리뷰 가져오기 (필터 및 정렬 포함)
+    reviews_query = f'''
+        SELECT 
+            r.comment, 
+            r.reviewDate, 
+            r.watchedDate, 
+            m.title AS movie_title, 
+            u.UserID AS user_name
+        FROM Review r
+        JOIN Movie m ON r.movieID = m.movieID
+        JOIN User u ON r.userID = u.UserID
+        WHERE m.title LIKE ? AND u.UserID LIKE ?
+        {order_clause}
+        LIMIT ? OFFSET ?
+    '''
+    reviews = conn.execute(
+        reviews_query,
+        (f"%{search_movie}%", f"%{search_user}%", per_page, offset)
+    ).fetchall()
+
+    conn.close()
+
+    # 템플릿에 데이터 전달
+    return render_template(
+        'all_reviews.html',
+        reviews=reviews,
+        page=page,
+        total_pages=total_pages,
+        search_movie=search_movie,
+        search_user=search_user,
+        sort_by=sort_by
+    )
 
 
 @app.route('/about')
 def about():
     return render_template('about.html')  # What's our app? 페이지
-
-
-@app.route('/reviews/<int:movie_id>', methods=['GET', 'POST'])
-def reviews(movie_id):
-    conn = get_db_connection()
-    if request.method == 'POST':
-        # 새로운 리뷰 추가
-        review_text = request.form['review']
-        conn.execute(
-            'INSERT INTO reviews (movie_id, review_text) VALUES (?, ?)',
-            (movie_id, review_text)
-        )
-        conn.commit()
-    # 영화 정보 가져오기
-    movie = conn.execute(
-        'SELECT * FROM movies WHERE id = ?', (movie_id,)).fetchone()
-    reviews = conn.execute(
-        'SELECT * FROM reviews WHERE movie_id = ?', (movie_id,)).fetchall()
-    conn.close()
-    return render_template('review.html', movie=movie, reviews=reviews)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>리뷰 추가</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <h1>영화 리뷰 추가</h1>
+    <form action="{{ url_for('add_review') }}" method="post">
+        <input type="hidden" name="username" value="{{ username }}"> <!-- 사용자 이름 전달 -->
+        <label for="movieTitle">영화 제목:</label>
+        <input type="text" id="movieTitle" name="movieTitle" required>
+        <br>
+        <label for="comment">리뷰:</label>
+        <textarea id="comment" name="comment" required></textarea>
+        <br>
+        <label for="watchedDate">영화를 본 날짜:</label>
+        <input type="date" id="watchedDate" name="watchedDate" required>
+        <br>
+        <button type="submit">저장</button>
+    </form>
+
+
+</body>
+
+</html>
