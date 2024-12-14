@@ -40,6 +40,22 @@
                                 <td>{{ review['comment'] }}</td>
                                 <td>{{ review['reviewDate'] }}</td>
                                 <td>{{ review['watchedDate'] }}</td>
+                                <td>
+                                    <!-- 수정 버튼 -->
+                                    <button class="edit-btn" data-review-id="{{ review['reviewID'] }}">수정</button>
+
+                                    <!-- 삭제 버튼 -->
+                                    <form action="{{ url_for('delete_review') }}" method="post" style="display:inline;">
+                                        <input type="hidden" name="review_id" value="{{ review['reviewID'] }}">
+                                        <input type="hidden" name="redirect_url" value="{{ request.path }}">
+                                        <!-- 현재 페이지 URL -->
+                                        <button type="submit" class="btn-delete"
+                                            onclick="return confirm('정말로 삭제하시겠습니까?');">
+                                            삭제
+                                        </button>
+                                    </form>
+
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -66,7 +82,22 @@
                 alert("팝업을 열 수 없습니다. 팝업 차단 설정을 확인하세요.");
             }
         });
+
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+                const reviewId = this.dataset.reviewId;
+                const popup = window.open(
+                    `/review/edit?review_id=${reviewId}`,
+                    "리뷰 수정",
+                    "width=500,height=600"
+                );
+                popup.focus();
+            });
+        });
+
     </script>
+
 
 </body>
 

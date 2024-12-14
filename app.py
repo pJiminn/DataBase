@@ -206,12 +206,12 @@ def list_movies_page():
 
     # 영화 목록과 관련 감독 및 배우 정보 가져오기
     movies = conn.execute('''
-        SELECT 
-            m.movieID, 
-            m.title, 
-            m.genre, 
-            m.release_date, 
-            m.runtime, 
+        SELECT
+            m.movieID,
+            m.title,
+            m.genre,
+            m.release_date,
+            m.runtime,
             m.poster,
             GROUP_CONCAT(DISTINCT md.directorName) AS directors,
             GROUP_CONCAT(DISTINCT ma.actorName) AS actors
@@ -360,6 +360,88 @@ def add_review():
         window.close();  // 팝업 닫기
     </script>
     '''
+
+
+@app.route('/review/edit', methods=['GET'])
+def edit_review():
+    review_id = request.args.get('review_id')  # URL 파라미터에서 리뷰 ID 가져오기
+
+    conn = get_db_connection()
+    review = conn.execute(
+        '''
+        SELECT r.reviewID, r.comment, r.watchedDate, m.title AS movie_title
+        FROM Review r
+        JOIN Movie m ON r.movieID = m.movieID
+        WHERE r.reviewID = ?
+        ''',
+        (review_id,)
+    ).fetchone()
+    conn.close()
+
+    return render_template('edit_review.html', review=review)
+
+
+@app.route('/review/update', methods=['POST'])
+def update_review():
+    review_id = request.form['review_id']  # 폼에서 리뷰 ID 가져오기
+    comment = request.form['comment']
+    watched_date = request.form['watchedDate']
+
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            '''
+            UPDATE Review
+            SET comment = ?, watchedDate = ?
+            WHERE reviewID = ?
+            ''',
+            (comment, watched_date, review_id)
+        )
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return f'''
+        <script>
+            alert("오류 발생: {str(e)}");
+            window.close();
+        </script>
+        '''
+    finally:
+        conn.close()
+
+    # 성공 메시지 및 팝업 닫기
+    return '''
+    <script>
+        alert("리뷰가 수정되었습니다!");
+        window.opener.location.reload();  // 부모 창 새로고침
+        window.close();  // 팝업 닫기
+    </script>
+    '''
+
+
+@app.route('/review/delete', methods=['POST'])
+def delete_review():
+    review_id = request.form['review_id']  # 폼에서 리뷰 ID 가져오기
+    redirect_url = request.form.get(
+        'redirect_url', url_for('all_reviews'))  # 리다이렉트 URL 기본값 설정
+
+    conn = get_db_connection()
+    try:
+        conn.execute('DELETE FROM Review WHERE reviewID = ?', (review_id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return f'''
+        <script>
+            alert("오류 발생: {str(e)}");
+            window.location.href = "{redirect_url}";
+        </script>
+        '''
+    finally:
+        conn.close()
+
+    # 성공적으로 삭제 후 지정된 URL로 리다이렉션
+    return redirect(redirect_url)
 
 
 @app.route('/review', methods=['GET'])

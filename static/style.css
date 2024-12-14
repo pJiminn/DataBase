@@ -251,3 +251,30 @@ td {
     font-size: 1.2em;
     color: #333;
 }
+
+.btn-edit {
+    background-color: #feca57;
+    color: black;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.btn-delete {
+    background-color: #f34213;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-edit:hover {
+    background-color: #ffd84b;
+}
+
+.btn-delete:hover {
+    background-color: #e12c0a;
+}

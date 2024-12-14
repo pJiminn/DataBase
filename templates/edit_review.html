@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>리뷰 수정</title>
+</head>
+
+<body>
+    <h1>리뷰 수정</h1>
+    <form action="{{ url_for('update_review') }}" method="post">
+        <input type="hidden" name="review_id" value="{{ review['reviewID'] }}"> <!-- 리뷰 ID -->
+
+        <label for="movieTitle">영화 제목:</label>
+        <input type="text" id="movieTitle" value="{{ review['movie_title'] }}" readonly>
+        <br>
+
+        <label for="comment">리뷰 내용:</label>
+        <textarea id="comment" name="comment" required>{{ review['comment'] }}</textarea>
+        <br>
+
+        <label for="watchedDate">영화를 본 날짜:</label>
+        <input type="date" id="watchedDate" name="watchedDate" value="{{ review['watchedDate'] }}" required>
+        <br>
+
+        <button type="submit">수정</button>
+    </form>
+</body>
+
+</html>
