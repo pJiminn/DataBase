@@ -8,6 +8,8 @@
 </head>
 
 <body>
+    <!-- Home 버튼 -->
+    <a href="/" class="home-button">Home</a>
     <header style="margin-bottom: 30px;">
         <h1>리뷰 모아보기 💬</h1>
 
@@ -40,6 +42,7 @@
                     <th>Review Date</th>
                     <th>Watched Date</th>
                     <th>User</th>
+                    <th>rating</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,6 +53,7 @@
                     <td>{{ review['reviewDate'] }}</td>
                     <td>{{ review['watchedDate'] }}</td>
                     <td>{{ review['user_name'] }}</td>
+                    <<td>{{ review['rating'] }} / 10</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -8,6 +8,9 @@
 </head>
 
 <body>
+    <!-- Home 버튼 -->
+    <a href="/" class="home-button">Home</a>
+
     <header>
         <h1>{{ user_name }}님의 <span class="highlight">PROFILE</span></h1>
     </header>
@@ -31,6 +34,7 @@
                                 <th>Comment</th>
                                 <th>Review Date</th>
                                 <th>Watched Date</th>
+                                <th> rating </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -40,6 +44,7 @@
                                 <td>{{ review['comment'] }}</td>
                                 <td>{{ review['reviewDate'] }}</td>
                                 <td>{{ review['watchedDate'] }}</td>
+                                <td>{{ review['rating'] }} / 10</td>
                                 <td>
                                     <!-- 수정 버튼 -->
                                     <button class="edit-btn" data-review-id="{{ review['reviewID'] }}">수정</button>

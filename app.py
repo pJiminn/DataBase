@@ -92,15 +92,35 @@ def search_movies(search_query, search_type):
 @app.route('/')
 def index():
     conn = get_db_connection()
+
+    # 최신 포스터 URL 가져오기
     latest_movie = conn.execute(
-        'SELECT poster FROM Movie ORDER BY movieID DESC LIMIT 1').fetchone()
-    conn.close()
+        'SELECT poster FROM Movie ORDER BY movieID DESC LIMIT 1'
+    ).fetchone()
 
     # 최신 포스터 URL이 없으면 기본 이미지 사용
-    poster_url = latest_movie['poster'] if latest_movie and latest_movie['poster'] else url_for(
-        'static', filename='images/pick.jpg')
+    weekly_pick = latest_movie['poster'] if latest_movie and latest_movie['poster'] else url_for(
+        'static', filename='images/pick.jpg'
+    )
 
-    return render_template('index.html', weekly_pick=poster_url)
+    # 평점 평균이 높은 TOP 3 영화 가져오기
+    top_movies = conn.execute('''
+        SELECT m.poster, AVG(r.rating) as avg_rating
+        FROM Movie m
+        JOIN Review r ON m.movieID = r.movieID
+        GROUP BY m.movieID
+        ORDER BY avg_rating DESC
+        LIMIT 3
+    ''').fetchall()
+
+    # 데이터베이스 연결 닫기
+    conn.close()
+
+    # Top 3 포스터 URL 리스트
+    top_posters = [movie['poster'] for movie in top_movies]
+
+    # 템플릿 렌더링
+    return render_template('index.html', weekly_pick=weekly_pick, top_posters=top_posters)
 
 
 # 영화 목록 페이지
@@ -277,7 +297,7 @@ def check_user():
     # 해당 UserID의 리뷰 가져오기
     reviews = conn.execute(
         '''
-        SELECT r.reviewID, m.title AS movie_title, r.comment, r.reviewDate, r.watchedDate
+        SELECT r.reviewID, m.title AS movie_title, r.comment, r.reviewDate, r.watchedDate, r.rating
         FROM Review r
         JOIN Movie m ON r.movieID = m.movieID
         WHERE r.UserID = ?
@@ -301,6 +321,7 @@ def add_review():
     movie_title = request.form['movieTitle']  # 영화 제목
     comment = request.form['comment']  # 리뷰 내용
     watched_date = request.form['watchedDate']  # 영화 본 날짜
+    rating = int(request.form['rating'])  # 평점
     review_date = datetime.now().strftime('%Y-%m-%d')  # 현재 날짜
     username = request.form['username']  # 사용자 이름 (폼에서 전달)
     print(f"Received username: {username}")
@@ -333,10 +354,10 @@ def add_review():
         # 리뷰 테이블에 데이터 삽입
         conn.execute(
             '''
-            INSERT INTO Review (movieID, userID, comment, reviewDate, watchedDate)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO Review (movieID, userID, comment, reviewDate, watchedDate ,rating)
+            VALUES (?, ?, ?, ?, ?,?)
             ''',
-            (movie_id, user_id, comment, review_date, watched_date)
+            (movie_id, user_id, comment, review_date, watched_date, rating)
         )
 
         # 트랜잭션 커밋
@@ -369,7 +390,7 @@ def edit_review():
     conn = get_db_connection()
     review = conn.execute(
         '''
-        SELECT r.reviewID, r.comment, r.watchedDate, m.title AS movie_title
+        SELECT r.reviewID, r.comment, r.watchedDate ,m.title AS movie_title,r.rating 
         FROM Review r
         JOIN Movie m ON r.movieID = m.movieID
         WHERE r.reviewID = ?
@@ -383,19 +404,23 @@ def edit_review():
 
 @app.route('/review/update', methods=['POST'])
 def update_review():
-    review_id = request.form['review_id']  # 폼에서 리뷰 ID 가져오기
+    review_id = request.form['review_id']
     comment = request.form['comment']
     watched_date = request.form['watchedDate']
+    rating = int(request.form['rating'])
+
+    print(
+        f"Debug: review_id={review_id}, comment={comment}, watched_date={watched_date}, rating={rating}")
 
     conn = get_db_connection()
     try:
         conn.execute(
             '''
             UPDATE Review
-            SET comment = ?, watchedDate = ?
+            SET comment = ?, watchedDate = ?, rating = ?
             WHERE reviewID = ?
             ''',
-            (comment, watched_date, review_id)
+            (comment, watched_date, rating, review_id)
         )
         conn.commit()
     except Exception as e:
@@ -409,12 +434,11 @@ def update_review():
     finally:
         conn.close()
 
-    # 성공 메시지 및 팝업 닫기
     return '''
     <script>
         alert("리뷰가 수정되었습니다!");
-        window.opener.location.reload();  // 부모 창 새로고침
-        window.close();  // 팝업 닫기
+        window.opener.location.reload();
+        window.close();
     </script>
     '''
 
@@ -486,7 +510,8 @@ def all_reviews():
             r.reviewDate, 
             r.watchedDate, 
             m.title AS movie_title, 
-            u.UserID AS user_name
+            u.UserID AS user_name,
+            r.rating
         FROM Review r
         JOIN Movie m ON r.movieID = m.movieID
         JOIN User u ON r.userID = u.UserID

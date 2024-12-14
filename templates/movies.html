@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Movie Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
     <style>
         body {
             display: flex;
@@ -80,7 +82,8 @@
             text-align: center;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
         }
@@ -138,9 +141,9 @@
     <form method="POST" action="/movies">
         <input type="text" name="search_query" placeholder="검색어를 입력하세요" value="{{ query }}" required>
         <select name="search_type">
-            <option value="title" {% if search_type == 'title' %}selected{% endif %}>영화명</option>
-            <option value="director" {% if search_type == 'director' %}selected{% endif %}>감독명</option>
-            <option value="actor" {% if search_type == 'actor' %}selected{% endif %}>배우명</option>
+            <option value="title" {% if search_type=='title' %}selected{% endif %}>영화명</option>
+            <option value="director" {% if search_type=='director' %}selected{% endif %}>감독명</option>
+            <option value="actor" {% if search_type=='actor' %}selected{% endif %}>배우명</option>
         </select>
         <button type="submit">검색</button>
     </form>
@@ -150,13 +153,13 @@
     <table>
         <thead>
             <tr>
-                <th >추가</th>
-                <th >제목</th>
-                <th >포스터</th>
-                <th >감독</th>
+                <th>추가</th>
+                <th>제목</th>
+                <th>포스터</th>
+                <th>감독</th>
                 <th style="width: 300px;">배우</th>
-                <th >개봉일</th>
-                <th >장르</th>
+                <th>개봉일</th>
+                <th>장르</th>
                 <th style="width: 100px;">런타임</th>
             </tr>
         </thead>
@@ -199,12 +202,12 @@
         <a href="/movies?page={{ page - 1 }}&query={{ query }}&search_type={{ search_type }}">이전</a>
         {% endif %}
         <span>페이지 {{ page }} / {{ total_pages }}</span>
-        {% if page < total_pages %}
-        <a href="/movies?page={{ page + 1 }}&query={{ query }}&search_type={{ search_type }}">다음</a>
-        {% endif %}
+        {% if page < total_pages %} <a
+            href="/movies?page={{ page + 1 }}&query={{ query }}&search_type={{ search_type }}">다음</a>
+            {% endif %}
     </div>
     {% endif %}
-    
+
     {% elif mode == 'list' %}
     <!-- 등록된 영화 보기 화면 -->
     <h2>등록된 영화 목록</h2>
@@ -239,14 +242,15 @@
                 <td>{{ movie['runtime'] }}</td>
                 <td>
                     <form method="POST" action="/delete_movie/{{ movie['movieID'] }}">
-                        <button type="submit" style="background-color: red; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        <button type="submit"
+                            style="background-color: red; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
                             제거
                         </button>
                     </form>
                 </td>
             </tr>
             {% endfor %}
-        </tbody>        
+        </tbody>
     </table>
     {% endif %}
 </body>
