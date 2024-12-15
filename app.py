@@ -188,7 +188,24 @@ def add_movie():
     runtime = request.form['runtime']
 
     conn = get_db_connection()
+
     try:
+        # 기존에 동일한 영화 제목과 감독이 있는지 확인
+        existing_movie = conn.execute('''
+            SELECT m.movieID
+            FROM Movie m
+            JOIN Movie_Director md ON m.movieID = md.movieID
+            WHERE m.title = ? AND md.directorName IN (?)
+        ''', (title, directors)).fetchone()
+
+        if existing_movie:
+            return '''
+            <script>
+                alert("이미 동일한 영화와 감독이 존재합니다. 추가할 수 없습니다.");
+                window.history.back();
+            </script>
+            '''
+
         # Movie 데이터 삽입
         conn.execute(
             'INSERT INTO Movie (title, genre, release_date, runtime, poster) VALUES (?, ?, ?, ?, ?)',
@@ -214,10 +231,17 @@ def add_movie():
     except Exception as e:
         print(f"Error adding movie: {e}")
         conn.rollback()
+        return '''
+        <script>
+            alert("영화 추가 중 오류가 발생했습니다.");
+            window.history.back();
+        </script>
+        '''
     finally:
         conn.close()
 
     return redirect(url_for('movies'))
+
 
 
 @app.route('/movies/list')
@@ -273,9 +297,21 @@ def profile_input():
     return render_template('profile_input.html')  # 이름 입력 페이지
 
 
-@app.route('/profile/check', methods=['POST'])
+@app.route('/profile/check', methods=['GET', 'POST'])
 def check_user():
-    username = request.form['username']
+    if request.method == 'POST':
+        username = request.form['username']
+    elif request.method == 'GET':
+        username = request.args.get('username')
+
+    if not username:
+        return '''
+        <script>
+            alert("사용자 이름이 필요합니다.");
+            window.location.href = "/profile";
+        </script>
+        '''
+
     conn = get_db_connection()
 
     # User 테이블에서 이름 확인
@@ -446,8 +482,7 @@ def update_review():
 @app.route('/review/delete', methods=['POST'])
 def delete_review():
     review_id = request.form['review_id']  # 폼에서 리뷰 ID 가져오기
-    redirect_url = request.form.get(
-        'redirect_url', url_for('all_reviews'))  # 리다이렉트 URL 기본값 설정
+    username = request.form['user_name']  # 폼에서 사용자 이름 가져오기
 
     conn = get_db_connection()
     try:
@@ -458,14 +493,15 @@ def delete_review():
         return f'''
         <script>
             alert("오류 발생: {str(e)}");
-            window.location.href = "{redirect_url}";
+            window.location.href = "{url_for('check_user', username=username)}";
         </script>
         '''
     finally:
         conn.close()
 
-    # 성공적으로 삭제 후 지정된 URL로 리다이렉션
-    return redirect(redirect_url)
+    # 삭제 성공 후 사용자 이름과 함께 리디렉션
+    return redirect(url_for('check_user', username=username))
+
 
 
 @app.route('/review', methods=['GET'])
