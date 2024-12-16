@@ -199,13 +199,14 @@
     <!-- 페이지 구분 -->
     <div class="pagination">
         {% if page > 1 %}
-        <a href="/movies?page={{ page - 1 }}&query={{ query }}&search_type={{ search_type }}">이전</a>
+        <a href="/movies/add?page={{ page - 1 }}&query={{ query }}&search_type={{ search_type }}">이전</a>
         {% endif %}
         <span>페이지 {{ page }} / {{ total_pages }}</span>
-        {% if page < total_pages %} <a
-            href="/movies?page={{ page + 1 }}&query={{ query }}&search_type={{ search_type }}">다음</a>
-            {% endif %}
+        {% if page < total_pages %}
+        <a href="/movies/add?page={{ page + 1 }}&query={{ query }}&search_type={{ search_type }}">다음</a>
+        {% endif %}
     </div>
+    
     {% endif %}
 
     {% elif mode == 'list' %}

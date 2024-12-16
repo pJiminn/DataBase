@@ -163,18 +163,37 @@ def movies():
 
 @app.route('/movies/add', methods=['GET', 'POST'])
 def add_movie_page():
+    query = request.args.get('query', '')  # GET 요청에서 쿼리 가져오기
+    search_type = request.args.get('search_type', 'title')  # 기본 검색 유형
+    page = int(request.args.get('page', 1))  # 현재 페이지, 기본값 1
+    per_page = 20  # 한 페이지당 영화 수
+
+    search_results = []
+
     if request.method == 'POST':
         query = request.form['search_query']
         search_type = request.form['search_type']
         search_results = search_movies(query, search_type)
-        return render_template(
-            'movies.html',
-            movies=search_results,
-            query=query,
-            search_type=search_type,
-            mode='add'
-        )
-    return render_template('movies.html', mode='add')
+    elif query:  # GET 요청에서 query 값이 있으면 검색 수행
+        search_results = search_movies(query, search_type)
+
+    # 페이징 처리
+    total_results = len(search_results)
+    total_pages = (total_results + per_page - 1) // per_page  # 전체 페이지 수 계산
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_results = search_results[start:end]
+
+    return render_template(
+        'movies.html',
+        movies=paginated_results,
+        query=query,
+        search_type=search_type,
+        page=page,
+        total_pages=total_pages,
+        mode='add'
+    )
+
 
 
 @app.route('/add_movieToDatabase', methods=['POST'])
