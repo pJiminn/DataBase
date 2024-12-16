@@ -282,6 +282,7 @@ def list_movies_page():
         LEFT JOIN Movie_Director md ON m.movieID = md.movieID
         LEFT JOIN Movie_Actor ma ON m.movieID = ma.movieID
         GROUP BY m.movieID
+        ORDER BY m.movieID ASC
     ''').fetchall()
     conn.close()
 
